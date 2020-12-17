@@ -53,6 +53,8 @@
           <template v-for="(line, index) in syncOutput">
             <p v-if="syncOutput.length > 0" :key="line + index">{{line}}</p>
           </template>
+          <!-- Used for Scroll to -->
+          <div id="scroll-target"></div>
         </v-card>
       </v-container>
     </v-main>
@@ -62,6 +64,8 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Component } from "vue-property-decorator";
+import VueScrollTo from 'vue-scrollto';
+
 
 @Component({
   name: "App",
@@ -73,6 +77,24 @@ export default class App extends Vue {
   public outputPath = "";
   public disableSync = false;
   public syncOutput: string[] = [];
+  public scrollOptions: any = {
+    container: '.output-container',
+    easing: 'ease-in',
+    offset: -60,
+    force: true,
+    cancelable: true,
+    onStart: function(element: any) {
+      // scrolling started
+    },
+    onDone: function(element: any) {
+      // scrolling is done
+    },
+    onCancel: function() {
+      // scrolling has been interrupted
+    },
+    x: false,
+    y: true
+  }
 
   mounted() {
     this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
@@ -80,8 +102,8 @@ export default class App extends Vue {
     });
 
     this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
-      console.log(data);
       this.syncOutput = [...this.syncOutput, data];
+      VueScrollTo.scrollTo('#scroll-target', 500, this.scrollOptions);
     });
   }
 
