@@ -1,11 +1,59 @@
 <template>
-  <div id="app">
-    
-  </div>
+  <v-app>
+    <!-- Nav Bar -->
+    <v-app-bar
+      app
+      color="secondary"
+      dark
+    >
+      <div class="d-flex align-center">
+        <h1>Eikona Sync</h1>
+      </div>
+    </v-app-bar>
+
+    <v-main>
+      <v-container>
+        <!-- Sync Dir -->
+        <v-row align-content="center" justify="center">
+          <v-col cols="8">
+            <v-btn @click="handleSelectSyncDir" class="d-inline-block">Sync Dir</v-btn>
+
+            <v-text-field
+              v-model="syncPath"
+              class="d-inline-block ml-5 sync-dir-input"
+              label="Path..."
+              solo
+            ></v-text-field>   
+          </v-col>
+        </v-row> 
+
+        <!-- Output Dir -->
+        <v-row align-content="center" justify="center">
+          <v-col cols="8">
+            <v-btn @click="handleSelectOutputDir" class="d-inline-block">Output</v-btn>
+
+            <v-text-field
+              v-model="outputPath"
+              class="d-inline-block ml-5 sync-dir-input"
+              label="Path..."
+              solo
+            ></v-text-field>   
+          </v-col>
+        </v-row> 
+
+        <!-- Sync Button -->
+        <v-row>
+          <v-col cols="12">
+            <v-btn color="success" block>Sync</v-btn>
+          </v-col>
+        </v-row>     
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue from 'vue';
 import { Component } from "vue-property-decorator";
 
 @Component({
@@ -13,34 +61,28 @@ import { Component } from "vue-property-decorator";
   components: {},
 })
 export default class App extends Vue {
-  public greeting = "hello Thomas";
+  private ipcRenderer: any = (window as any).ipcRenderer;
+  public syncPath = "";
+  public outputPath = "";
 
-  created() { 
-    (window as any).ipcRenderer.send('perform-action', 'test');
+  mounted() {
+    this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
+      (this as any)[`${data.caller}Path`] = data.result;
+    });
+  }
+
+  public handleSelectSyncDir() {
+    this.ipcRenderer.send('open-file-dialog', 'sync');
+  }
+
+  public handleSelectOutputDir() {
+    this.ipcRenderer.send('open-file-dialog', 'output');
   }
 }
 </script>
 
-
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+.sync-dir-input {
+  width: 70%;
 }
 </style>

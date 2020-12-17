@@ -1,9 +1,9 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, ipcRenderer } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-const path = require('path');
+import path from 'path';
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -35,7 +35,18 @@ async function createWindow() {
   }
 }
 
-
+ipcMain.on('open-file-dialog', (event: any, arg: string) => {
+  dialog.showOpenDialog({
+    properties: ['openFile', 'openDirectory']
+  }).then(result => {
+    event.sender.send('selected-directory', {
+      caller: arg,
+      result: result.filePaths[0]
+    });
+  }).catch(err => {
+    console.log(err)
+})
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -50,10 +61,6 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
-
-ipcMain.on('perform-action', (event, arg) => {
-  console.log(arg);
 })
 
 // This method will be called when Electron has finished
