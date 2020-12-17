@@ -1,12 +1,26 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    
   </div>
 </template>
+
+<script lang="ts">
+import Vue from "vue";
+import { Component } from "vue-property-decorator";
+
+@Component({
+  name: "App",
+  components: {},
+})
+export default class App extends Vue {
+  public greeting = "hello Thomas";
+
+  created() { 
+    (window as any).ipcRenderer.send('perform-action', 'test');
+  }
+}
+</script>
+
 
 <style lang="scss">
 #app {
