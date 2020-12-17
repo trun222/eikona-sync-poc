@@ -4,6 +4,8 @@ import { app, protocol, BrowserWindow, ipcMain, dialog, ipcRenderer } from 'elec
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path';
+import Rsync from 'rsync';
+  
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -41,11 +43,43 @@ ipcMain.on('open-file-dialog', (event: any, arg: string) => {
   }).then(result => {
     event.sender.send('selected-directory', {
       caller: arg,
-      result: result.filePaths[0]
+      result: result.filePaths[0] + '/'
     });
   }).catch(err => {
     console.log(err)
-})
+  })
+});
+
+// Handle R-synce functionality
+ipcMain.on('start-sync', (event: any, arg: string) => {
+  var rsync = new Rsync()
+      .flags('avz')
+      .progress()
+      .source('/Users/trun222/Nextcloud/')
+      .destination('/Users/trun222/Eikona-Output');
+
+  var rsyncPid = rsync.execute(
+      function (error: any, code: any, cmd: any) {
+        console.log(cmd);
+          // we're done
+      }, function(data: any){
+        // do things like parse progress
+        console.log(data.toString());
+        event.sender.send('sync-inprogress', data.toString());
+      }, function(data: any) {
+          // do things like parse error output
+      }
+  );
+
+  var quitting = function() {
+    if (rsyncPid) {
+      rsyncPid.kill();
+    }
+    process.exit();
+  }
+  process.on("SIGINT", quitting); // run signal handler on CTRL-C
+  process.on("SIGTERM", quitting); // run signal handler on SIGTERM
+  process.on("exit", quitting); 
 });
 
 // Quit when all windows are closed.

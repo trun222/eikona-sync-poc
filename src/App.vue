@@ -44,9 +44,16 @@
         <!-- Sync Button -->
         <v-row>
           <v-col cols="12">
-            <v-btn color="success" block>Sync</v-btn>
+            <v-btn @click="handleStartSync" :disabled="disableSync" color="success" block>Sync</v-btn>
           </v-col>
         </v-row>     
+
+        <!-- Output Container -->
+        <v-card class="output-container mt-4 pa-2">
+          <template v-for="(line, index) in syncOutput">
+            <p v-if="syncOutput.length > 0" :key="line + index">{{line}}</p>
+          </template>
+        </v-card>
       </v-container>
     </v-main>
   </v-app>
@@ -64,10 +71,17 @@ export default class App extends Vue {
   private ipcRenderer: any = (window as any).ipcRenderer;
   public syncPath = "";
   public outputPath = "";
+  public disableSync = false;
+  public syncOutput: string[] = [];
 
   mounted() {
     this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
       (this as any)[`${data.caller}Path`] = data.result;
+    });
+
+    this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
+      console.log(data);
+      this.syncOutput = [...this.syncOutput, data];
     });
   }
 
@@ -78,11 +92,25 @@ export default class App extends Vue {
   public handleSelectOutputDir() {
     this.ipcRenderer.send('open-file-dialog', 'output');
   }
+
+  public handleStartSync() {
+    this.disableSync = true;
+    this.ipcRenderer.send('start-sync', {
+      syncPath: this.syncPath,
+      outputPath: this.outputPath
+    });
+  }
 }
 </script>
 
 <style lang="scss">
 .sync-dir-input {
   width: 70%;
+}
+
+.output-container {
+  height: 500px;
+  width: 100%;
+  overflow-y: scroll;
 }
 </style>
