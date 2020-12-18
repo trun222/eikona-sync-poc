@@ -49,9 +49,9 @@
         </v-row>     
 
         <!-- Output Container -->
-        <v-card class="output-container mt-4 pa-2">
+        <v-card v-if="syncOutput.length > 0" class="output-container mt-4 pa-2">
           <template v-for="(line, index) in syncOutput">
-            <p v-if="syncOutput.length > 0" :key="line + index">{{line}}</p>
+            <p :key="line + index">{{line}}</p>
           </template>
           <!-- Used for Scroll to -->
           <div id="scroll-target"></div>
@@ -80,8 +80,8 @@ export default class App extends Vue {
   public scrollOptions: any = {
     container: '.output-container',
     easing: 'ease-in',
-    offset: -60,
-    force: true,
+    offset: -100,
+    force: false,
     cancelable: true,
     onStart: function(element: any) {
       // scrolling started
@@ -103,7 +103,7 @@ export default class App extends Vue {
 
     this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
       this.syncOutput = [...this.syncOutput, data];
-      VueScrollTo.scrollTo('#scroll-target', 500, this.scrollOptions);
+      VueScrollTo.scrollTo('#scroll-target', 5000, this.scrollOptions);
     });
   }
 
