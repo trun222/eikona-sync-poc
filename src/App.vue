@@ -89,27 +89,10 @@ export default class App extends Vue {
   private ipcRenderer: any = (window as any).ipcRenderer;
   public syncPath = "";
   public outputPath = "";
+  public isScrolling = false;
   public disableSync = false;
   public syncCompleted = false;
   public syncOutput: string[] = [];
-  public scrollOptions: any = {
-    container: '.output-container',
-    easing: 'ease-in',
-    offset: -100,
-    force: false,
-    cancelable: true,
-    onStart: function(element: any) {
-      // scrolling started
-    },
-    onDone: function(element: any) {
-      // scrolling is done
-    },
-    onCancel: function() {
-      // scrolling has been interrupted
-    },
-    x: false,
-    y: true
-  };
 
   created() {
     window.addEventListener('beforeunload', () => {
@@ -126,6 +109,7 @@ export default class App extends Vue {
     this.ipcRenderer.on('sync-complete', (event: any, data: any) => {
       // Sync completed
       this.syncCompleted = true;
+      this.disableSync = false;
     });
 
     this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
@@ -135,8 +119,27 @@ export default class App extends Vue {
     this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
       this.syncOutput = [...this.syncOutput, data];
       const el = document.getElementById('scroll-target');
-      if(this.syncOutput.length > 0 && el) {
-        VueScrollTo.scrollTo('#scroll-target', 2000, this.scrollOptions);
+      if(this.syncOutput.length > 0 && el && !this.isScrolling) {
+        VueScrollTo.scrollTo('#scroll-target', 1000, {
+          container: '.output-container',
+          easing: 'ease-in',
+          offset: -100,
+          force: true,
+          cancelable: true,
+          onStart: (element: any) => {
+            // scrolling started
+            this.isScrolling = true;
+          },
+          onDone: (element: any) => {
+            // scrolling is done
+            this.isScrolling = false;
+          },
+          onCancel: function() {
+            // scrolling has been interrupted
+          },
+          x: false,
+          y: true
+        });
       }
     });
   }

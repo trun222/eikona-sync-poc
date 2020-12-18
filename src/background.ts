@@ -51,12 +51,13 @@ ipcMain.on('open-file-dialog', (event: any, arg: string) => {
 });
 
 // Handle R-synce functionality
-ipcMain.on('start-sync', (event: any, arg: string) => {
+ipcMain.on('start-sync', (event: any, arg: any) => {
+  // TODO: Kind of dangerous. Probably best to set allowed paths/routes
   var rsync = new Rsync()
       .flags('avz')
       .progress()
-      .source('/Users/trun222/Nextcloud/')
-      .destination('/Users/trun222/Eikona-Output');
+      .source(arg.syncPath)
+      .destination(arg.outputPath);
 
   var rsyncPid = rsync.execute(
       function (error: any, code: any, cmd: any) {
