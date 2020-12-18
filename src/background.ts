@@ -60,8 +60,9 @@ ipcMain.on('start-sync', (event: any, arg: string) => {
 
   var rsyncPid = rsync.execute(
       function (error: any, code: any, cmd: any) {
-        console.log(cmd);
-          // we're done
+      // Emit that the sync is completed
+      event.sender.send('sync-complete');
+          // we're done`
       }, function(data: any){
         // do things like parse progress
         console.log(data.toString());

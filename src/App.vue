@@ -13,6 +13,15 @@
 
     <v-main>
       <v-container>
+        <!-- Sync Completed -->
+        <v-alert
+          v-if="syncCompleted"
+          outlined
+          type="success"
+          text
+        >
+          Your sync was successful!
+        </v-alert>
         <!-- Sync Dir -->
         <v-row align-content="center" justify="center">
           <v-col cols="8">
@@ -31,7 +40,6 @@
         <v-row align-content="center" justify="center">
           <v-col cols="8">
             <v-btn @click="handleSelectOutputDir" class="d-inline-block">Output</v-btn>
-
             <v-text-field
               v-model="outputPath"
               class="d-inline-block ml-5 sync-dir-input"
@@ -45,6 +53,12 @@
         <v-row>
           <v-col cols="12">
             <v-btn @click="handleStartSync" :disabled="disableSync" color="success" block>Sync</v-btn>
+          </v-col>
+        </v-row>     
+        <!-- Stop Sync Button -->
+        <v-row>
+          <v-col cols="12">
+            <v-btn v-if="disableSync" @click="handleKillSync" color="warning" block>Stop</v-btn>
           </v-col>
         </v-row>     
 
@@ -76,6 +90,7 @@ export default class App extends Vue {
   public syncPath = "";
   public outputPath = "";
   public disableSync = false;
+  public syncCompleted = false;
   public syncOutput: string[] = [];
   public scrollOptions: any = {
     container: '.output-container',
@@ -94,7 +109,7 @@ export default class App extends Vue {
     },
     x: false,
     y: true
-  }
+  };
 
   created() {
     window.addEventListener('beforeunload', () => {
@@ -108,13 +123,21 @@ export default class App extends Vue {
   }
 
   mounted() {
+    this.ipcRenderer.on('sync-complete', (event: any, data: any) => {
+      // Sync completed
+      this.syncCompleted = true;
+    });
+
     this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
       (this as any)[`${data.caller}Path`] = data.result;
     });
 
     this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
       this.syncOutput = [...this.syncOutput, data];
-      VueScrollTo.scrollTo('#scroll-target', 5000, this.scrollOptions);
+      const el = document.getElementById('scroll-target');
+      if(this.syncOutput.length > 0 && el) {
+        VueScrollTo.scrollTo('#scroll-target', 2000, this.scrollOptions);
+      }
     });
   }
 
@@ -124,6 +147,10 @@ export default class App extends Vue {
 
   public handleSelectOutputDir() {
     this.ipcRenderer.send('open-file-dialog', 'output');
+  }
+
+  public handleKillSync() {
+    this.ipcRenderer.send('kill-sync');
   }
 
   public handleStartSync() {
