@@ -96,6 +96,17 @@ export default class App extends Vue {
     y: true
   }
 
+  created() {
+    window.addEventListener('beforeunload', () => {
+      this.ipcRenderer.send('kill-sync');
+    })
+  }
+
+  beforeDestory() {
+    // Remove event listener
+    window.removeEventListener('beforeunload', () => null);
+  }
+
   mounted() {
     this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
       (this as any)[`${data.caller}Path`] = data.result;

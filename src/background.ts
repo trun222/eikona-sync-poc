@@ -77,6 +77,11 @@ ipcMain.on('start-sync', (event: any, arg: string) => {
     }
     process.exit();
   }
+
+  ipcMain.on('kill-sync', (event: any, arg: string) => {
+    quitting();
+  });
+
   process.on("SIGINT", quitting); // run signal handler on CTRL-C
   process.on("SIGTERM", quitting); // run signal handler on SIGTERM
   process.on("exit", quitting); 
