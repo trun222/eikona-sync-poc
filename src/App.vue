@@ -118,14 +118,15 @@ export default class App extends Vue {
 
     this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
       this.syncOutput = [...this.syncOutput, data];
+      
       const el = document.getElementById('scroll-target');
       if(this.syncOutput.length > 0 && el && !this.isScrolling) {
         VueScrollTo.scrollTo('#scroll-target', 1000, {
           container: '.output-container',
           easing: 'ease-in',
-          offset: -100,
+          offset: -70,
           force: true,
-          cancelable: true,
+          cancelable: false,
           onStart: (element: any) => {
             // scrolling started
             this.isScrolling = true;
