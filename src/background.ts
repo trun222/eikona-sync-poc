@@ -35,57 +35,78 @@ async function createWindow() {
   }
 }
 
-ipcMain.on('open-file-dialog', (event: any, arg: string) => {
+// Events that are being listened to on the back-end
+ipcMain.on('ACTION_RECEIVER', (event: any, data: any) => {
+  let rsyncPID;
+
+  switch (data.ACTION) {
+    case 'SYNC-START':
+      rsyncPID = handleSyncStart(event, data);
+      break;
+    case 'SYNC-KILL':
+      handleSyncKill(rsyncPID);
+      break;
+    case 'DIRECTORY-OPEN':
+      handleDirectoryOpen(event, data.type);
+      break;
+  }
+});
+
+
+function handleDirectoryOpen(event: any, type: string) {
   dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory']
   }).then(result => {
     event.sender.send('selected-directory', {
-      caller: arg,
+      caller: type,
       result: result.filePaths[0] + '/'
     });
   }).catch(err => {
     console.log(err)
   })
-});
+}
 
-// Handle R-synce functionality
-ipcMain.on('start-sync', (event: any, arg: any) => {
-  // TODO: Kind of dangerous. Probably best to set allowed paths/routes
-  var rsync = new Rsync()
-      .flags('avz')
-      .progress()
-      .source(arg.syncPath)
-      .destination(arg.outputPath);
+// TODO: Kind of dangerous. Probably best to set allowed paths/routes
+function initializeRsync(data: any) {
+  return new Rsync()
+    .flags('avz')
+    .progress()
+    .source(data.syncPath)
+    .destination(data.outputPath);
+}
 
-  var rsyncPid = rsync.execute(
-      function (error: any, code: any, cmd: any) {
-      // Emit that the sync is completed
-      event.sender.send('sync-complete');
-          // we're done`
-      }, function(data: any){
-        // do things like parse progress
-        console.log(data.toString());
-        event.sender.send('sync-inprogress', data.toString());
-      }, function(data: any) {
-          // do things like parse error output
+function executeRsync(rsync: any, event: any) {
+  return rsync.execute(
+      (error: any, code: any, cmd: any) => {
+        event.sender.send('SYNC-COMPLETE');
+      }, (data: any) => {
+        event.sender.send('SYNC-INPROGRESS', data.toString());
+      }, (data: any) => {
+          // Handle Errors
       }
   );
+}
 
-  var quitting = function() {
-    if (rsyncPid) {
-      rsyncPid.kill();
-    }
-    process.exit();
+function handleSyncStart(event: any, data: any) {
+  const rsync = initializeRsync(data); 
+  const rsyncPID = executeRsync(rsync, event);
+  return rsyncPID;
+}
+
+const quitting = (rsyncPID: any) => {
+  if (rsyncPID) {
+    rsyncPID.kill();
   }
+  process.exit();
+}
 
-  ipcMain.on('kill-sync', (event: any, arg: string) => {
-    quitting();
-  });
-
-  process.on("SIGINT", quitting); // run signal handler on CTRL-C
-  process.on("SIGTERM", quitting); // run signal handler on SIGTERM
+function handleSyncKill(rsyncPID: any) {
+  quitting(rsyncPID);
+  // Other window events that require shutting down the connection
+  process.on("SIGINT", quitting);
+  process.on("SIGTERM", quitting);
   process.on("exit", quitting); 
-});
+}
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
