@@ -96,7 +96,7 @@ export default class App extends Vue {
 
   created() {
     window.addEventListener('beforeunload', () => {
-      this.ipcRenderer.send('kill-sync');
+      this.handleSyncKill();
     })
   }
 
@@ -106,63 +106,87 @@ export default class App extends Vue {
   }
 
   mounted() {
-    this.ipcRenderer.on('sync-complete', (event: any, data: any) => {
-      // Sync completed
-      this.syncCompleted = true;
-      this.disableSync = false;
-    });
-
-    this.ipcRenderer.on('selected-directory', (event: any, data: any) => {
-      (this as any)[`${data.caller}Path`] = data.result;
-    });
-
-    this.ipcRenderer.on('sync-inprogress', (event: any, data: any) => {
-      this.syncOutput = [...this.syncOutput, data];
-      
-      const el = document.getElementById('scroll-target');
-      if(this.syncOutput.length > 0 && el && !this.isScrolling) {
-        VueScrollTo.scrollTo('#scroll-target', 1000, {
-          container: '.output-container',
-          easing: 'ease-in',
-          offset: -70,
-          force: true,
-          cancelable: false,
-          onStart: (element: any) => {
-            // scrolling started
-            this.isScrolling = true;
-          },
-          onDone: (element: any) => {
-            // scrolling is done
-            this.isScrolling = false;
-          },
-          onCancel: function() {
-            // scrolling has been interrupted
-          },
-          x: false,
-          y: true
-        });
+    // Events that are being listened to on the front-end
+    this.ipcRenderer.on('ACTION_RECEIVER', (event: any, data: any) => {
+      switch(data.ACTION) {
+        case 'SYNC-INPROGRESS':
+          this.handleSyncInProgress(data.result);
+          break;
+        case 'SYNC-COMPLETE':
+          this.handleSyncComplete();
+          break;
+        case 'DIRECTORY-SELECTED':
+          this.handleDirectorySelected(data.result);
+          break;
       }
     });
   }
 
-  public handleSelectSyncDir() {
-    this.ipcRenderer.send('open-file-dialog', 'sync');
+  // Events that will be emitted to the back-end
+  public emitter(ACTION: string, data: any) {
+    switch(ACTION) {
+      case 'SYNC-START':
+        this.handleSyncStart();
+        break;
+      case 'SYNC-KILL':
+        this.handleSyncKill();
+        break;
+      case 'DIRECTORY-OPEN':
+        this.handleSelectSyncDir(data.type);
+        break;
+    }
   }
 
-  public handleSelectOutputDir() {
-    this.ipcRenderer.send('open-file-dialog', 'output');
+  public handleDirectorySelected(data: any) {
+    (this as any)[`${data.caller}Path`] = data.result;
   }
 
-  public handleKillSync() {
-    this.ipcRenderer.send('kill-sync');
+  public handleSyncInProgress(result: any) {
+    this.syncOutput = [...this.syncOutput, result];
+    this.scrollTo();
   }
 
-  public handleStartSync() {
+  public handleSyncComplete() {
+    this.syncCompleted = true;
+    this.disableSync = false;
+  }
+
+  public handleSelectSyncDir(type: string) {
+    this.ipcRenderer.send('DIRECTORY-OPEN', type);
+  }
+
+  public handleSyncKill() {
+    this.ipcRenderer.send('SYNC-KILL');
+  }
+
+  public handleSyncStart() {
     this.disableSync = true;
-    this.ipcRenderer.send('start-sync', {
+    this.ipcRenderer.send('SYNC-START', {
       syncPath: this.syncPath,
       outputPath: this.outputPath
     });
+  }
+
+  public scrollTo() {
+    const el = document.getElementById('scroll-target');
+    if(this.syncOutput.length > 0 && el && !this.isScrolling) {
+      VueScrollTo.scrollTo('#scroll-target', 500, {
+        container: '.output-container',
+        easing: 'ease-in',
+        offset: -70,
+        force: true,
+        cancelable: false,
+        onStart: (element: any) => {
+          this.isScrolling = true;
+        },
+        onDone: (element: any) => {
+          this.isScrolling = false;
+        },
+        onCancel: () => {},
+        x: false,
+        y: true
+      });
+    }
   }
 }
 </script>
