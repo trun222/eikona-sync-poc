@@ -109,7 +109,7 @@ export default class App extends Vue {
     this.ipcRenderer.on('ACTION_RECEIVER', (event: any, data: any) => {
       switch(data.ACTION) {
         case 'SYNC-INPROGRESS':
-          this.handleSyncInProgress(data.result);
+          this.handleSyncInProgress(data.result.data);
           break;
         case 'SYNC-COMPLETE':
           this.handleSyncComplete();
@@ -136,13 +136,13 @@ export default class App extends Vue {
     }
   }
 
-  public handleDirectorySelected(data: any) {
-    switch(data.type) {
+  public handleDirectorySelected(result: any) {
+    switch(result.type) {
       case 'syncPath':
-        this.syncPath = data.result
+        this.syncPath = result.data;
         break;
       case 'outputPath':
-        this.outputPath = data.result;
+        this.outputPath = result.data;
         break;
     }
   }

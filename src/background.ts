@@ -39,9 +39,6 @@ async function createWindow() {
 ipcMain.on('ACTION_RECEIVER', (event: any, data: any) => {
   let rsyncPID;
 
-  console.log('ACTION_RECEVIER');
-  console.log(data.ACTION);
-
   switch (data.ACTION) {
     case 'SYNC-START':
       rsyncPID = handleSyncStart(event, data);
@@ -64,7 +61,7 @@ function handleDirectoryOpen(event: any, type: string) {
         ACTION: 'DIRECTORY-SELECTED',
         result: {
           type,
-          result: result.filePaths[0] + '/'
+          data: result.filePaths[0] + '/'
         }
       }
     );
@@ -94,6 +91,9 @@ function executeRsync(rsync: any, event: any) {
       event.sender.send('ACTION_RECEIVER',
         {
           ACTION: 'SYNC-INPROGRESS',
+          result: {
+            data: data.toString()
+          }
         }
       );
     }, (data: any) => {
