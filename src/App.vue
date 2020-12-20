@@ -25,7 +25,7 @@
         <!-- Sync Dir -->
         <v-row align-content="center" justify="center">
           <v-col cols="8">
-            <v-btn @click="emitter('DIRECTORY-OPEN', { type: 'syncPath' })" class="d-inline-block">Sync Dir</v-btn>
+            <v-btn @click="emitter(ACTIONS.DIRECTORY_OPEN, { type: 'syncPath' })" class="d-inline-block">Sync Dir</v-btn>
 
             <v-text-field
               v-model="syncPath"
@@ -39,7 +39,7 @@
         <!-- Output Dir -->
         <v-row align-content="center" justify="center">
           <v-col cols="8">
-            <v-btn @click="emitter('DIRECTORY-OPEN', { type: 'outputPath' })" class="d-inline-block">Output</v-btn>
+            <v-btn @click="emitter(ACTIONS.DIRECTORY_OPEN, { type: 'outputPath' })" class="d-inline-block">Output</v-btn>
             <v-text-field
               v-model="outputPath"
               class="d-inline-block ml-5 sync-dir-input"
@@ -79,6 +79,7 @@
 import Vue from 'vue';
 import { Component } from "vue-property-decorator";
 import VueScrollTo from 'vue-scrollto';
+import { ACTIONS } from './util/ACTIONS.enum';
 
 
 @Component({
@@ -93,6 +94,7 @@ export default class App extends Vue {
   public disableSync = false;
   public syncCompleted = false;
   public syncOutput: string[] = [];
+  public ACTIONS = ACTIONS;
 
   created() {
     window.addEventListener('beforeunload', () => {
@@ -106,15 +108,15 @@ export default class App extends Vue {
 
   mounted() {
     // Events that are being listened to on the front-end
-    this.ipcRenderer.on('ACTION_RECEIVER', (event: any, data: any) => {
+    this.ipcRenderer.on(ACTIONS.ACTION_RECEIVER, (event: any, data: any) => {
       switch(data.ACTION) {
-        case 'SYNC-INPROGRESS':
+        case ACTIONS.SYNC_INPROGRESS:
           this.handleSyncInProgress(data.result.data);
           break;
-        case 'SYNC-COMPLETE':
+        case ACTIONS.SYNC_COMPLETE:
           this.handleSyncComplete();
           break;
-        case 'DIRECTORY-SELECTED':
+        case ACTIONS.DIRECTORY_SELECTED:
           this.handleDirectorySelected(data.result);
           break;
       }
@@ -124,13 +126,13 @@ export default class App extends Vue {
   // Events that will be emitted to the back-end
   public emitter(ACTION: string, data: any) {
     switch(ACTION) {
-      case 'SYNC-START':
+      case ACTIONS.SYNC_START:
         this.handleSyncStart();
         break;
-      case 'SYNC-KILL':
+      case ACTIONS.SYNC_KILL:
         this.handleSyncKill();
         break;
-      case 'DIRECTORY-OPEN':
+      case ACTIONS.DIRECTORY_OPEN:
         this.handleSelectSyncDir(data.type);
         break;
     }
@@ -158,9 +160,8 @@ export default class App extends Vue {
   }
 
   public handleSelectSyncDir(type: string) {
-    console.log('Entered handleSelectSyncDir');
-    this.ipcRenderer.send('ACTION_RECEIVER', { 
-      ACTION: 'DIRECTORY-OPEN',
+    this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, { 
+      ACTION: ACTIONS.DIRECTORY_OPEN,
       args: {
         type
       } 
@@ -168,15 +169,15 @@ export default class App extends Vue {
   }
 
   public handleSyncKill() {
-    this.ipcRenderer.send('ACTION_RECEIVER', {
-      ACTION: 'SYNC-KILL'
+    this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, {
+      ACTION: ACTIONS.SYNC_KILL
     });
   }
 
   public handleSyncStart() {
     this.disableSync = true;
-    this.ipcRenderer.send('ACTION_RECEIVER', {
-      ACTION: 'SYNC-START',
+    this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, {
+      ACTION: ACTIONS.SYNC_START,
       args: {
         syncPath: this.syncPath,
         outputPath: this.outputPath

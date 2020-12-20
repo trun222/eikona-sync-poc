@@ -5,6 +5,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path';
 import Rsync from 'rsync';
+import { ACTIONS } from './util/ACTIONS.enum';
   
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -36,17 +37,17 @@ async function createWindow() {
 }
 
 // Events that are being listened to on the back-end
-ipcMain.on('ACTION_RECEIVER', (event: any, data: any) => {
+ipcMain.on(ACTIONS.ACTION_RECEIVER, (event: any, data: any) => {
   let rsyncPID;
 
   switch (data.ACTION) {
-    case 'SYNC-START':
+    case ACTIONS.SYNC_START:
       rsyncPID = handleSyncStart(event, data);
       break;
-    case 'SYNC-KILL':
+    case ACTIONS.SYNC_KILL:
       handleSyncKill(rsyncPID);
       break;
-    case 'DIRECTORY-OPEN':
+    case ACTIONS.DIRECTORY_OPEN:
       handleDirectoryOpen(event, data.args.type);
       break;
   }
@@ -56,9 +57,9 @@ function handleDirectoryOpen(event: any, type: string) {
   dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory']
   }).then(result => {
-    event.sender.send('ACTION_RECEIVER',
+    event.sender.send(ACTIONS.ACTION_RECEIVER,
       {
-        ACTION: 'DIRECTORY-SELECTED',
+        ACTION: ACTIONS.DIRECTORY_SELECTED,
         result: {
           type,
           data: result.filePaths[0] + '/'
@@ -82,15 +83,15 @@ function initializeRsync(args: any) {
 function executeRsync(rsync: any, event: any) {
   return rsync.execute(
     (error: any, code: any, cmd: any) => {
-      event.sender.send('ACTION_RECEIVER',
+      event.sender.send(ACTIONS.ACTION_RECEIVER,
         {
-          ACTION: 'SYNC-COMPLETE',
+          ACTION: ACTIONS.SYNC_COMPLETE,
         }
       );
     }, (data: any) => {
-      event.sender.send('ACTION_RECEIVER',
+      event.sender.send(ACTIONS.ACTION_RECEIVER,
         {
-          ACTION: 'SYNC-INPROGRESS',
+          ACTION: ACTIONS.SYNC_INPROGRESS,
           result: {
             data: data.toString()
           }
