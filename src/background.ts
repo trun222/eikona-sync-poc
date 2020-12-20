@@ -39,6 +39,9 @@ async function createWindow() {
 ipcMain.on('ACTION_RECEIVER', (event: any, data: any) => {
   let rsyncPID;
 
+  console.log('ACTION_RECEVIER');
+  console.log(data.ACTION);
+
   switch (data.ACTION) {
     case 'SYNC-START':
       rsyncPID = handleSyncStart(event, data);
@@ -47,48 +50,60 @@ ipcMain.on('ACTION_RECEIVER', (event: any, data: any) => {
       handleSyncKill(rsyncPID);
       break;
     case 'DIRECTORY-OPEN':
-      handleDirectoryOpen(event, data.type);
+      handleDirectoryOpen(event, data.args.type);
       break;
   }
 });
-
 
 function handleDirectoryOpen(event: any, type: string) {
   dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory']
   }).then(result => {
-    event.sender.send('selected-directory', {
-      caller: type,
-      result: result.filePaths[0] + '/'
-    });
+    event.sender.send('ACTION_RECEIVER',
+      {
+        ACTION: 'DIRECTORY-SELECTED',
+        result: {
+          type,
+          result: result.filePaths[0] + '/'
+        }
+      }
+    );
   }).catch(err => {
     console.log(err)
   })
 }
 
 // TODO: Kind of dangerous. Probably best to set allowed paths/routes
-function initializeRsync(data: any) {
+function initializeRsync(args: any) {
   return new Rsync()
     .flags('avz')
     .progress()
-    .source(data.syncPath)
-    .destination(data.outputPath);
+    .source(args.syncPath)
+    .destination(args.outputPath);
 }
 
 function executeRsync(rsync: any, event: any) {
   return rsync.execute(
-      (error: any, code: any, cmd: any) => {
-        event.sender.send('SYNC-COMPLETE');
-      }, (data: any) => {
-        event.sender.send('SYNC-INPROGRESS', data.toString());
-      }, (data: any) => {
-          // Handle Errors
-      }
+    (error: any, code: any, cmd: any) => {
+      event.sender.send('ACTION_RECEIVER',
+        {
+          ACTION: 'SYNC-COMPLETE',
+        }
+      );
+    }, (data: any) => {
+      event.sender.send('ACTION_RECEIVER',
+        {
+          ACTION: 'SYNC-INPROGRESS',
+        }
+      );
+    }, (data: any) => {
+        // Handle Errors
+    }
   );
 }
 
 function handleSyncStart(event: any, data: any) {
-  const rsync = initializeRsync(data); 
+  const rsync = initializeRsync(data.args); 
   const rsyncPID = executeRsync(rsync, event);
   return rsyncPID;
 }

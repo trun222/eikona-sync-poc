@@ -25,7 +25,7 @@
         <!-- Sync Dir -->
         <v-row align-content="center" justify="center">
           <v-col cols="8">
-            <v-btn @click="handleSelectSyncDir" class="d-inline-block">Sync Dir</v-btn>
+            <v-btn @click="emitter('DIRECTORY-OPEN', { type: 'syncPath' })" class="d-inline-block">Sync Dir</v-btn>
 
             <v-text-field
               v-model="syncPath"
@@ -39,7 +39,7 @@
         <!-- Output Dir -->
         <v-row align-content="center" justify="center">
           <v-col cols="8">
-            <v-btn @click="handleSelectOutputDir" class="d-inline-block">Output</v-btn>
+            <v-btn @click="emitter('DIRECTORY-OPEN', { type: 'outputPath' })" class="d-inline-block">Output</v-btn>
             <v-text-field
               v-model="outputPath"
               class="d-inline-block ml-5 sync-dir-input"
@@ -52,13 +52,13 @@
         <!-- Sync Button -->
         <v-row>
           <v-col cols="12">
-            <v-btn @click="handleStartSync" :disabled="disableSync" color="success" block>Sync</v-btn>
+            <v-btn @click="handleSyncStart" :disabled="disableSync" color="success" block>Sync</v-btn>
           </v-col>
         </v-row>     
         <!-- Stop Sync Button -->
         <v-row>
           <v-col cols="12">
-            <v-btn v-if="disableSync" @click="handleKillSync" color="warning" block>Stop</v-btn>
+            <v-btn v-if="disableSync" @click="handleSyncKill" color="warning" block>Stop</v-btn>
           </v-col>
         </v-row>     
 
@@ -101,7 +101,6 @@ export default class App extends Vue {
   }
 
   beforeDestory() {
-    // Remove event listener
     window.removeEventListener('beforeunload', () => null);
   }
 
@@ -138,7 +137,14 @@ export default class App extends Vue {
   }
 
   public handleDirectorySelected(data: any) {
-    (this as any)[`${data.caller}Path`] = data.result;
+    switch(data.type) {
+      case 'syncPath':
+        this.syncPath = data.result
+        break;
+      case 'outputPath':
+        this.outputPath = data.result;
+        break;
+    }
   }
 
   public handleSyncInProgress(result: any) {
@@ -152,18 +158,29 @@ export default class App extends Vue {
   }
 
   public handleSelectSyncDir(type: string) {
-    this.ipcRenderer.send('DIRECTORY-OPEN', type);
+    console.log('Entered handleSelectSyncDir');
+    this.ipcRenderer.send('ACTION_RECEIVER', { 
+      ACTION: 'DIRECTORY-OPEN',
+      args: {
+        type
+      } 
+    });
   }
 
   public handleSyncKill() {
-    this.ipcRenderer.send('SYNC-KILL');
+    this.ipcRenderer.send('ACTION_RECEIVER', {
+      ACTION: 'SYNC-KILL'
+    });
   }
 
   public handleSyncStart() {
     this.disableSync = true;
-    this.ipcRenderer.send('SYNC-START', {
-      syncPath: this.syncPath,
-      outputPath: this.outputPath
+    this.ipcRenderer.send('ACTION_RECEIVER', {
+      ACTION: 'SYNC-START',
+      args: {
+        syncPath: this.syncPath,
+        outputPath: this.outputPath
+      }
     });
   }
 
@@ -182,7 +199,7 @@ export default class App extends Vue {
         onDone: (element: any) => {
           this.isScrolling = false;
         },
-        onCancel: () => {},
+        onCancel: () => null,
         x: false,
         y: true
       });
