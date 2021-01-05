@@ -10,8 +10,8 @@
             Your sync was successful!
         </v-alert>
 
-        <!-- Local Sync -->
-        <h1 class="text-center">Local Sync</h1>
+        <!-- Remote Sync -->
+        <h1 class="text-center">Remote Sync</h1>
 
         <!-- Sync Dir -->
         <v-row align-content="center" justify="center">
@@ -70,10 +70,11 @@ import { Component } from "vue-property-decorator";
 import VueScrollTo from 'vue-scrollto';
 import { ACTIONS } from '../util/ACTIONS.enum';
 
+
 @Component({
-  name: "LocalSync"
+  name: "RemoteSync"
 })
-export default class LocalSync extends Vue {
+export default class RemoteSync extends Vue {
   private ipcRenderer: any = (window as any).ipcRenderer;
   public syncPath = "";
   public outputPath = "";
@@ -113,7 +114,7 @@ export default class LocalSync extends Vue {
   // Events that will be emitted to the back-end
   public emitter(ACTION: string, data: any) {
     switch(ACTION) {
-      case ACTIONS.SYNC_START_LOCAL:
+      case ACTIONS.SYNC_START:
         this.handleSyncStart();
         break;
       case ACTIONS.SYNC_KILL:
@@ -164,7 +165,7 @@ export default class LocalSync extends Vue {
   public handleSyncStart() {
     this.disableSync = true;
     this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, {
-      ACTION: ACTIONS.SYNC_START_LOCAL,
+      ACTION: ACTIONS.SYNC_START_REMOTE,
       args: {
         syncPath: this.syncPath,
         outputPath: this.outputPath

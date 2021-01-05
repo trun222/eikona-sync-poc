@@ -36,23 +36,6 @@ async function createWindow() {
   }
 }
 
-// Events that are being listened to on the back-end
-ipcMain.on(ACTIONS.ACTION_RECEIVER, (event: any, data: any) => {
-  let rsyncPID;
-
-  switch (data.ACTION) {
-    case ACTIONS.SYNC_START:
-      rsyncPID = handleSyncStart(event, data);
-      break;
-    case ACTIONS.SYNC_KILL:
-      handleSyncKill(rsyncPID);
-      break;
-    case ACTIONS.DIRECTORY_OPEN:
-      handleDirectoryOpen(event, data.args.type);
-      break;
-  }
-});
-
 function handleDirectoryOpen(event: any, type: string) {
   dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory']
@@ -72,7 +55,16 @@ function handleDirectoryOpen(event: any, type: string) {
 }
 
 // TODO: Kind of dangerous. Probably best to set allowed paths/routes
-function initializeRsync(args: any) {
+function initializeLocalRsync(args: any) {
+  return new Rsync()
+    .flags('avz')
+    .progress()
+    .source(args.syncPath)
+    .destination(args.outputPath);
+}
+
+// TODO: Kind of dangerous. Probably best to set allowed paths/routes
+function initializeRemoteRsync(args: any) {
   return new Rsync()
     .flags('avz')
     .progress()
@@ -103,8 +95,14 @@ function executeRsync(rsync: any, event: any) {
   );
 }
 
-function handleSyncStart(event: any, data: any) {
-  const rsync = initializeRsync(data.args); 
+function handleLocalSyncStart(event: any, data: any) {
+  const rsync = initializeLocalRsync(data.args); 
+  const rsyncPID = executeRsync(rsync, event);
+  return rsyncPID;
+}
+
+function handleRemoteSyncStart(event: any, data: any) {
+  const rsync = initializeRemoteRsync(data.args); 
   const rsyncPID = executeRsync(rsync, event);
   return rsyncPID;
 }
@@ -123,6 +121,26 @@ function handleSyncKill(rsyncPID: any) {
   process.on("SIGTERM", quitting);
   process.on("exit", quitting); 
 }
+
+// Events that are being listened to on the back-end
+ipcMain.on(ACTIONS.ACTION_RECEIVER, (event: any, data: any) => {
+  let rsyncPID;
+
+  switch (data.ACTION) {
+    case ACTIONS.SYNC_START_LOCAL:
+      rsyncPID = handleLocalSyncStart(event, data);
+      break;
+    case ACTIONS_SYNC_START_REMOTE:
+      rsyncPID = handleRemoteSyncStart(event, data);
+      break;
+    case ACTIONS.SYNC_KILL:
+      handleSyncKill(rsyncPID);
+      break;
+    case ACTIONS.DIRECTORY_OPEN:
+      handleDirectoryOpen(event, data.args.type);
+      break;
+  }
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

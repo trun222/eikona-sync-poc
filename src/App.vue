@@ -27,6 +27,8 @@
 
         <!-- Local Sync -->
         <local-sync v-if="toggleSyncType === 0"></local-sync>
+        <!-- Remote Sync -->
+        <remote-sync v-if="toggleSyncType === 1"></remote-sync>
     </v-main>
   </v-app>
 </template>
@@ -39,6 +41,7 @@ import { Component } from "vue-property-decorator";
   name: "App",
   components: {
     LocalSync: () => import(/* webpackChunkName: "LocalSync.vue"  */ './components/LocalSync.vue'),
+    RemoteSync: () => import(/* webpackChunkName: "RemoteSync.vue"  */ './components/RemoteSync.vue'),
   },
 })
 export default class App extends Vue {
