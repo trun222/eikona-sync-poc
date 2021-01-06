@@ -1,13 +1,19 @@
-var Rsync = require('rsync');
+const Rsync = require('rsync');
 
+// var rsync = new Rsync()
+//   .shell('ssh')
+//   .flags('az')
+//   .source('/path/to/source')
+//   .destination('server:/path/to/destination');
 // Build the command
-var rsync = new Rsync()
+const rsync = new Rsync()
+    .shell('ssh')
     .flags('avz')
     .progress()
-    .source('/Users/trun222/Nextcloud/')
-    .destination('/Users/trun222/Eikona-Output');
+    .source('/Users/trun222/Pictures/Blog_Assets/')
+    .destination('aragorn@192.168.86.228:/home/aragorn/public');
 // execute with stream callbacks
-var rsyncPid = rsync.execute(
+const rsyncPid = rsync.execute(
     function (error, code, cmd) {
         console.log(cmd);
         // we're done
