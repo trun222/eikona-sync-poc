@@ -30,7 +30,7 @@
         <!-- Output Dir -->
         <v-row align-content="center" justify="center">
             <v-col cols="8">
-            <v-btn @click="emitter(ACTIONS.DIRECTORY_OPEN, { type: 'outputPath' })" class="d-inline-block">Output</v-btn>
+            <v-btn @click="emitter(ACTIONS.DIRECTORY_OPEN, { type: 'outputPath' })" class="d-inline-block local-output-btn">Output</v-btn>
             <v-text-field
                 v-model="outputPath"
                 class="d-inline-block ml-5 sync-dir-input"
@@ -85,6 +85,9 @@ export default class LocalSync extends Vue {
 
   created() {
     window.addEventListener('beforeunload', () => {
+      // Don't leak events
+      this.killListeners();
+      // If there is an active sync kill it
       this.handleSyncKill();
     })
   }
@@ -110,10 +113,20 @@ export default class LocalSync extends Vue {
     });
   }
 
+  public killListeners() {
+    const listeners = [
+      ACTIONS.SYNC_INPROGRESS,
+      ACTIONS.SYNC_COMPLETE,
+      ACTIONS.DIRECTORY_SELECTED
+    ];
+
+    listeners.forEach((l: any) => this.ipcRenderer.removeListener(l));
+  }
+
   // Events that will be emitted to the back-end
   public emitter(ACTION: string, data: any) {
     switch(ACTION) {
-      case ACTIONS.SYNC_START_LOCAL:
+      case ACTIONS.SYNC_START:
         this.handleSyncStart();
         break;
       case ACTIONS.SYNC_KILL:
@@ -164,7 +177,7 @@ export default class LocalSync extends Vue {
   public handleSyncStart() {
     this.disableSync = true;
     this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, {
-      ACTION: ACTIONS.SYNC_START_LOCAL,
+      ACTION: ACTIONS.SYNC_START,
       args: {
         syncPath: this.syncPath,
         outputPath: this.outputPath
@@ -205,5 +218,9 @@ export default class LocalSync extends Vue {
   height: 500px;
   width: 100%;
   overflow-y: scroll;
+}
+
+.local-output-btn {
+  margin-right: 10px;
 }
 </style>

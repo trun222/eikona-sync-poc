@@ -30,11 +30,11 @@
         <!-- Output Dir -->
         <v-row align-content="center" justify="center">
             <v-col cols="8">
-            <v-btn @click="emitter(ACTIONS.DIRECTORY_OPEN, { type: 'outputPath' })" class="d-inline-block">Output</v-btn>
+            <v-btn class="d-inline-block remote-output-btn">Sync Dir</v-btn>
             <v-text-field
                 v-model="outputPath"
                 class="d-inline-block ml-5 sync-dir-input"
-                label="Path..."
+                label="[USER]@[HOST]:[PATH]"
                 solo
             ></v-text-field>   
             </v-col>
@@ -86,6 +86,9 @@ export default class RemoteSync extends Vue {
 
   created() {
     window.addEventListener('beforeunload', () => {
+      // Don't leak events
+      this.killListeners();
+      // If there is an active sync kill it
       this.handleSyncKill();
     })
   }
@@ -109,6 +112,16 @@ export default class RemoteSync extends Vue {
           break;
       }
     });
+  }
+
+  public killListeners() {
+    const listeners = [
+      ACTIONS.SYNC_INPROGRESS,
+      ACTIONS.SYNC_COMPLETE,
+      ACTIONS.DIRECTORY_SELECTED
+    ];
+
+    listeners.forEach((l: any) => this.ipcRenderer.removeListener(l));
   }
 
   // Events that will be emitted to the back-end
@@ -165,7 +178,7 @@ export default class RemoteSync extends Vue {
   public handleSyncStart() {
     this.disableSync = true;
     this.ipcRenderer.send(ACTIONS.ACTION_RECEIVER, {
-      ACTION: ACTIONS.SYNC_START_REMOTE,
+      ACTION: ACTIONS.SYNC_START,
       args: {
         syncPath: this.syncPath,
         outputPath: this.outputPath
@@ -206,5 +219,9 @@ export default class RemoteSync extends Vue {
   height: 500px;
   width: 100%;
   overflow-y: scroll;
+}
+
+.remote-output-btn {
+  visibility: hidden;
 }
 </style>

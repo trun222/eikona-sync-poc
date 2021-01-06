@@ -55,16 +55,7 @@ function handleDirectoryOpen(event: any, type: string) {
 }
 
 // TODO: Kind of dangerous. Probably best to set allowed paths/routes
-function initializeLocalRsync(args: any) {
-  return new Rsync()
-    .flags('avz')
-    .progress()
-    .source(args.syncPath)
-    .destination(args.outputPath);
-}
-
-// TODO: Kind of dangerous. Probably best to set allowed paths/routes
-function initializeRemoteRsync(args: any) {
+function initializeRsync(args: any) {
   return new Rsync()
     .flags('avz')
     .progress()
@@ -95,14 +86,8 @@ function executeRsync(rsync: any, event: any) {
   );
 }
 
-function handleLocalSyncStart(event: any, data: any) {
-  const rsync = initializeLocalRsync(data.args); 
-  const rsyncPID = executeRsync(rsync, event);
-  return rsyncPID;
-}
-
-function handleRemoteSyncStart(event: any, data: any) {
-  const rsync = initializeRemoteRsync(data.args); 
+function handleSyncStart(event: any, data: any) {
+  const rsync = initializeRsync(data.args); 
   const rsyncPID = executeRsync(rsync, event);
   return rsyncPID;
 }
@@ -127,11 +112,8 @@ ipcMain.on(ACTIONS.ACTION_RECEIVER, (event: any, data: any) => {
   let rsyncPID;
 
   switch (data.ACTION) {
-    case ACTIONS.SYNC_START_LOCAL:
-      rsyncPID = handleLocalSyncStart(event, data);
-      break;
-    case ACTIONS_SYNC_START_REMOTE:
-      rsyncPID = handleRemoteSyncStart(event, data);
+    case ACTIONS.SYNC_START:
+      rsyncPID = handleSyncStart(event, data);
       break;
     case ACTIONS.SYNC_KILL:
       handleSyncKill(rsyncPID);
